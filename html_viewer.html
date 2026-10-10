@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cyber-Synth Code Canvas</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Monaco -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
+
+<style>
+    /* Custom CSS for the Cyber/Neon Theme */
+    body {
+        font-family: "Inter", sans-serif;
+        background-attachment: fixed;
+        /* Default to Dark Mode styles (background and text color handled by Tailwind's dark: utility below) */
+        transition: background-color 0.5s ease; /* Smooth background transition */
+    }
+
+    /* DARK MODE STYLES (Used when .dark is present on <html>) */
+    .dark body {
+        /* Deep, animated dark background */
+        background-color: #0c0a09; /* Stone 950 */
+        background-image: radial-gradient(circle at 10% 90%, rgba(30, 58, 138, 0.1) 0%, rgba(15, 23, 42, 0.9) 100%);
+        color: #e5e7eb; /* Text-gray-100 equivalent */
+    }
+
+    /* LIGHT MODE STYLES (Used when .dark is NOT present on <html>) */
+    body:not(.dark) {
+        /* Clean, subtle light background */
+        background-color: #f3f4f6; /* Gray 100 */
+        background-image: radial-gradient(circle at 10% 90%, rgba(255, 255, 255, 0.8) 0%, rgba(229, 231, 235, 0.9) 100%);
+        color: #1f2937; /* Text-gray-800 equivalent */
+    }
+
+
+    /* Neon glow effect for titles (Dark Mode Only) */
+    .dark .neon-text {
+        text-shadow: 0 0 7px rgba(129, 140, 248, 0.9), 0 0 15px rgba(59, 130, 246, 0.7);
+    }
+    
+    /* Responsive Monaco Editor and Preview Frame heights */
+    /* Use min() for better responsiveness on small vs large screens */
+    #vsEditorContainer {
+        height: min(420px, 60vh);
+        border-radius: 1.5rem;
+        overflow: hidden;
+    }
+    #previewFrame {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    
+    /* Main Card - Metallic/Deep Gradient Look */
+    .main-card {
+        transition: all 0.5s ease;
+    }
+    /* Dark Mode Card */
+    .dark .main-card {
+        background: radial-gradient(at 10% 90%, rgba(30, 58, 138, 0.2) 0%, #0f172a 100%);
+        border: 2px solid;
+        /* Metallic, glowing border */
+        border-image: linear-gradient(45deg, #4f46e5, #0ea5e9, #a855f7) 1;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 50px rgba(129, 140, 248, 0.3);
+    }
+    /* Light Mode Card - Subtle, polished look */
+    .main-card:not(.dark) {
+        background: radial-gradient(at 90% 10%, rgba(220, 220, 255, 0.5) 0%, #ffffff 100%);
+        border: 2px solid #94a3b8; /* Slate 400 */
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 0 20px rgba(100, 116, 139, 0.1);
+    }
+
+    /* 3D Button Press Animation */
+    .animated-btn {
+        transition: all 0.15s ease-out;
+        transform: translateZ(0);
+        box-shadow: 0 5px 0 0 var(--shadow-color);
+    }
+    .animated-btn:hover {
+        transform: translateY(-2px) scale(1.01) translateZ(0);
+        box-shadow: 0 7px 0 0 var(--shadow-color);
+    }
+    .animated-btn:active {
+        transform: translateY(3px) scale(0.98) translateZ(0);
+        box-shadow: 0 2px 0 0 var(--shadow-color);
+    }
+
+    /* Code Editor Container - RED Neon Glow (Dark Mode) */
+    .dark .editor-container-glow {
+        box-shadow: 0 0 15px #f87171, inset 0 0 10px #f87171;
+        border: 2px solid #ef4444;
+        transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease;
+    }
+    .dark .editor-container-glow:hover {
+        box-shadow: 0 0 30px #fca5a5, inset 0 0 20px #fca5a5;
+    }
+    /* Code Editor Container - Soft Border (Light Mode) */
+    .editor-container-glow:not(.dark) {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border: 2px solid #fca5a5;
+    }
+
+
+    /* Enhanced Live Rendering Area - BLUE Neon Glow with Grid (Dark Mode) */
+    .dark .preview-container {
+        position: relative;
+        background-color: #0d1117; 
+        background-image: radial-gradient(#1e3a8a 0.5px, transparent 0.5px);
+        background-size: 25px 25px;
+        border: 2px solid #3b82f6; 
+        box-shadow: 0 0 15px #3b82f6, inset 0 0 10px #3b82f6;
+        transition: box-shadow 0.4s ease-in-out, transform 0.4s ease, border-color 0.4s ease;
+    }
+    .dark .preview-container:hover {
+        transform: scale(1.005);
+        border-color: #818cf8; 
+        box-shadow: 0 0 30px #818cf8, inset 0 0 20px #818cf8; 
+    }
+    /* Live Rendering Area - Light Mode */
+    .preview-container:not(.dark) {
+        position: relative;
+        background-color: #ffffff;
+        border: 2px solid #93c5fd; 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: box-shadow 0.4s ease-in-out, transform 0.4s ease, border-color 0.4s ease;
+    }
+    .preview-container:not(.dark):hover {
+        transform: scale(1.005);
+        border-color: #60a5fa;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* Notification animation */
+    #notification {
+        transition: transform 0.4s ease-out;
+    }
+</style>
+
+<script>
+// Check for theme preference before body loads to avoid FOUC
+if (localStorage.theme === 'dark' ||
+   (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+}
+</script>
+
+</head>
+<!-- Increased responsive padding for the body -->
+<body class="min-h-screen p-4 sm:p-8 transition-colors duration-500">
+
+<!-- Header with Animated Text -->
+<h1 class="text-3xl sm:text-5xl font-black text-center mb-6 sm:mb-10 drop-shadow-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-200 animate-pulse-slow neon-text">
+    🚀 Code Alchemy: HTML Editor
+</h1>
+
+<!-- MAIN CARD -->
+<div class="max-w-7xl mx-auto rounded-3xl sm:rounded-[3rem] p-4 sm:p-8 shadow-2xl main-card">
+
+    <!-- EDITOR SECTION -->
+    <div class="mb-6 sm:mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center text-red-400 neon-text">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+            Source Code
+        </h2>
+        <div id="vsEditorContainer" class="shadow-2xl editor-container-glow"></div>
+    </div>
+
+    <!-- BUTTONS SECTION -->
+    <div class="flex flex-wrap justify-center gap-2 sm:gap-4 my-6 sm:my-8">
+
+        <button id="runPreviewBtn"
+            class="animated-btn px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-500/50 text-sm sm:text-base"
+            style="--shadow-color: #0ea5e9;">
+            ▶️ Run Preview
+        </button>
+
+        <button id="copyBtn"
+            class="animated-btn px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold shadow-xl focus:outline-none focus:ring-4 focus:ring-purple-500/50 text-sm sm:text-base"
+            style="--shadow-color: #db2777;">
+            📋 Copy Code
+        </button>
+
+        <button id="shareBtn"
+            class="animated-btn px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-yellow-500 to-orange-500 text-gray-900 font-semibold shadow-xl focus:outline-none focus:ring-4 focus:ring-yellow-500/50 text-sm sm:text-base"
+            style="--shadow-color: #f59e0b;">
+            🔗 Share Link
+        </button>
+
+        <label class="animated-btn px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-green-600 to-emerald-500 text-white font-semibold shadow-xl cursor-pointer focus:outline-none focus:ring-4 focus:ring-green-500/50 text-sm sm:text-base"
+            style="--shadow-color: #059669;">
+            ⬆️ Upload File
+            <input type="file" id="uploadFile" accept=".html" class="hidden">
+        </label>
+
+        <button id="downloadBtn"
+            class="animated-btn px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-gray-700 to-gray-500 text-white font-semibold shadow-xl focus:outline-none focus:ring-4 focus:ring-gray-700/50 text-sm sm:text-base"
+            style="--shadow-color: #4b5563;">
+            ⬇️ Download
+        </button>
+
+        <button id="themeToggle"
+            class="animated-btn px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-500 text-white font-semibold shadow-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/50 text-sm sm:text-base"
+            style="--shadow-color: #6d28d9;">
+            💡 Toggle Theme
+        </button>
+
+    </div>
+
+    <!-- PREVIEW SECTION -->
+    <div>
+        <!-- HEADING ROW: Live Rendering Title + Fullscreen Button -->
+        <div class="flex justify-between items-center mb-3 sm:mb-4">
+            <h2 class="text-xl sm:text-2xl font-bold flex items-center text-green-400 neon-text">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L19.5 7.25m-9.75 9.75L7.25 19.5m0-9.75L7.25 7.25M12 21a9 9 0 110-18 9 9 0 010 18z"></path></svg>
+                Live Rendering
+            </h2>
+            
+            <!-- FULLSCREEN BUTTON (Moved outside the preview-container) -->
+            <button id="fullscreenBtn"
+                class="bg-indigo-600 text-white px-3 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-xl shadow-lg hover:bg-indigo-700 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 animated-btn"
+                style="--shadow-color: #4f46e5;">
+                Fullscreen
+            </button>
+        </div>
+
+
+        <!-- PREVIEW FRAME CONTAINER -->
+        <div class="relative rounded-3xl shadow-2xl overflow-hidden h-[300px] sm:h-[420px] preview-container">
+            <iframe id="previewFrame"></iframe>
+        </div>
+
+        <p id="statusMessage"
+           class="text-center mt-4 sm:mt-6 text-base sm:text-lg font-medium transition-colors duration-300">
+           Start coding above to see the magic happen!
+        </p>
+    </div>
+
+</div>
+
+<!-- NOTIFICATION: Styled as a floating toast -->
+<div id="notification"
+     class="fixed top-4 right-4 sm:top-6 sm:right-6 translate-x-full transition-transform duration-500 ease-out z-50">
+    <div id="notificationContent"
+         class="p-3 sm:p-4 rounded-xl text-white font-medium shadow-2xl transform hover:scale-105 transition-transform text-sm sm:text-base"></div>
+</div>
+
+<!-- JS LOGIC (Updated theme toggle logic) -->
+<script>
+
+function notify(msg, success=true){
+    const box = document.getElementById("notification");
+    const inside = document.getElementById("notificationContent");
+
+    inside.className = `p-3 sm:p-4 rounded-xl shadow-2xl text-white font-medium transform hover:scale-105 transition-transform text-sm sm:text-base ${success?'bg-green-500':'bg-red-500'}`;
+    inside.textContent = msg;
+
+    box.classList.remove("translate-x-full");
+    box.classList.remove("right-6");
+    box.classList.add("right-4");
+
+    setTimeout(()=> {
+        box.classList.add("translate-x-full");
+        box.classList.remove("right-4");
+        box.classList.add("right-6");
+    }, 3000); // Hold toast longer
+}
+
+/* FULLSCREEN */
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+const previewFrame = document.getElementById("previewFrame");
+
+fullscreenBtn.onclick = () => {
+    // Check if the previewFrame exists before requesting fullscreen
+    if (previewFrame.requestFullscreen) {
+        previewFrame.requestFullscreen();
+    } else if (previewFrame.webkitRequestFullscreen) { /* Safari */
+        previewFrame.webkitRequestFullscreen();
+    } else if (previewFrame.msRequestFullscreen) { /* IE11 */
+        previewFrame.msRequestFullscreen();
+    }
+};
+
+// Function to update the theme inside the iframe
+function updateIframeTheme(isDark) {
+    // This function is still here from the previous attempt but is mostly replaced by
+    // the logic within updatePreview which creates the iframe content fresh each time.
+    // We keep it as a placeholder.
+}
+
+
+// --- Listen for theme toggle to update Monaco and iframe state ---
+function updateMonacoTheme(isDark) {
+    if (vsEditor) {
+        monaco.editor.setTheme(isDark ? 'vs-dark' : 'vs');
+    }
+}
+
+function updateStatusMessageTheme(isDark) {
+    const statusText = document.getElementById("statusMessage");
+    // Ensure responsive classes are maintained
+    statusText.className = `text-center mt-4 sm:mt-6 text-base sm:text-lg font-medium transition-colors duration-300 ${isDark ? 'text-gray-400' : 'text-gray-600'}`;
+}
+
+
+/* THEME */
+const themeToggle = document.getElementById("themeToggle");
+const mainCard = document.querySelector(".main-card");
+
+themeToggle.onclick = () => {
+    // 1. Toggle root class
+    document.documentElement.classList.toggle("dark");
+    const isDark = document.documentElement.classList.contains("dark");
+
+    // 2. Toggle main card class
+    mainCard.classList.toggle("dark", isDark);
+
+    // 3. Save preference
+    localStorage.theme = isDark ? "dark" : "light";
+
+    // 4. Update Monaco editor theme
+    updateMonacoTheme(isDark);
+    
+    // 5. Update status message theme
+    updateStatusMessageTheme(isDark);
+
+    // 6. Update iframe content (this is where the theme fix for the content lives)
+    updatePreview(vsEditor.getValue());
+};
+
+// Initial theme application
+if (document.documentElement.classList.contains('dark')) {
+    mainCard.classList.add('dark');
+    updateStatusMessageTheme(true);
+} else {
+    updateStatusMessageTheme(false);
+}
+
+
+/* MONACO INIT */
+let vsEditor;
+const vsEditorContainer = document.getElementById("vsEditorContainer");
+const initialTheme = document.documentElement.classList.contains('dark') ? 'vs-dark' : 'vs';
+
+require.config({ paths:{vs:"https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs"} });
+
+require(["vs/editor/editor.main"], () => {
+    vsEditor = monaco.editor.create(
+        vsEditorContainer,
+        {
+            value: "<!-- Start coding here! -->\n\n<h1 style='color: #8b5cf6; font-family: sans-serif;'>✨ Welcome to the High-Tech Canvas!</h1>\n<p style='padding: 20px; border: 1px dashed #6366f1; border-radius: 8px; color: #94a3b8;'>Your HTML output appears below in real-time.</p>",
+            language: "html",
+            theme: initialTheme,
+            minimap: { enabled: true },
+            automaticLayout: true
+        }
+    );
+    
+    vsEditor.onDidChangeModelContent(() => {
+        updatePreview(vsEditor.getValue());
+        
+        clearTimeout(vsEditor._statusTimeout);
+        vsEditor._statusTimeout = setTimeout(() => {
+            updateStatusMessageTheme(document.documentElement.classList.contains('dark'));
+            document.getElementById("statusMessage").textContent = "Code changed, preview updated.";
+        }, 100);
+    });
+
+    updatePreview(vsEditor.getValue());
+    
+});
+
+/* PREVIEW */
+function updatePreview(code){
+    try {
+        const doc = previewFrame.contentWindow.document;
+        doc.open();
+
+        // **KEY FIX**: Inject a minimal <head> and a <body> with a default background.
+        // If the user's code includes its own <body> tag, the default style will be ignored,
+        // which respects the user's explicit design. If the user only provides raw elements,
+        // this ensures the fullscreen iframe background is white (default) or the system theme color.
+        
+        // Check current system theme status
+        const isDark = document.documentElement.classList.contains('dark');
+        
+        // Base HTML template with default styles for body/background
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Live Preview</title>
+                <!-- Default styles for a white canvas if user doesn't specify -->
+                <style>
+                    /* Fallback background for when user content doesn't define one */
+                    body {
+                        background-color: ${isDark ? '#1f2937' : '#ffffff'}; /* Dark Gray in Dark Mode, White in Light Mode */
+                        color: ${isDark ? '#e5e7eb' : '#1f2937'};
+                        min-height: 100vh;
+                        margin: 0;
+                        padding: 10px;
+                        transition: all 0.5s;
+                    }
+                    /* Ensure the element that contains the code fills the screen in fullscreen */
+                    :fullscreen, :-webkit-full-screen, :-moz-full-screen, :-ms-full-screen {
+                        background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+                    }
+                </style>
+            </head>
+            <body>
+                ${code}
+            </body>
+            </html>
+        `;
+
+        doc.write(htmlContent);
+        doc.close();
+    } catch (e) {
+        console.error("Failed to update preview iframe:", e);
+    }
+}
+
+/* BUTTONS */
+const runPreviewBtn = document.getElementById("runPreviewBtn");
+const copyBtn = document.getElementById("copyBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const uploadFile = document.getElementById("uploadFile");
+const shareBtn = document.getElementById("shareBtn");
+const statusMessage = document.getElementById("statusMessage");
+
+runPreviewBtn.onclick = () => {
+    updatePreview(vsEditor.getValue());
+    notify("Preview Refreshed!", true);
+};
+
+copyBtn.onclick = () => {
+    const code = vsEditor.getValue();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => notify("Code Copied to Clipboard!", true));
+    } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            notify("Code Copied to Clipboard (Fallback)!", true);
+        } catch (err) {
+            notify("Failed to copy code.", false);
+        }
+        document.body.removeChild(textArea);
+    }
+};
+
+downloadBtn.onclick = () => {
+    const blob = new Blob([vsEditor.getValue()], { type:"text/html" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "canvas_code.html";
+    a.click();
+    notify("File Download Initiated!", true);
+};
+
+uploadFile.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) {
+        notify("No file selected.", false);
+        return;
+    }
+    const r = new FileReader();
+
+    r.onload = ev => {
+        try {
+            vsEditor.setValue(ev.target.result);
+            updatePreview(ev.target.result);
+            notify(`File "${file.name}" Loaded Successfully!`, true);
+        } catch (error) {
+            notify("Error loading file content.", false);
+        }
+    };
+    r.onerror = () => notify("Failed to read file.", false);
+    
+    r.readAsText(file);
+};
+
+/* SHARE LINK */
+shareBtn.onclick = () => {
+    const code = vsEditor.getValue();
+    const encoded = btoa(encodeURIComponent(code).replace(/%([0-9A-F]{2})/g,
+        function(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
+
+    const link = window.location.href.split('#')[0] + "#" + encoded;
+
+    const tempInput = document.createElement("input");
+    tempInput.value = link;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    try {
+        document.execCommand('copy');
+        notify("Shareable link copied!", true);
+    } catch (err) {
+        notify("Failed to copy link.", false);
+    }
+    document.body.removeChild(tempInput);
+
+
+    statusMessage.innerHTML =
+        `Share link generated: <span class='text-blue-500 dark:text-blue-400 break-all text-sm'>${link.substring(0, 80)}...</span>`;
+};
+
+/* HASH LOAD */
+window.addEventListener('load', () => {
+    const hash = window.location.hash.substring(1);
+    if (hash && vsEditor){
+        try {
+            const decoded = decodeURIComponent(atob(hash).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            vsEditor.setValue(decoded);
+            updatePreview(decoded);
+            notify("Loaded content from shared URL!", true);
+        } catch(e){
+            console.error("Error decoding hash:", e);
+            notify("Could not decode content from URL.", false);
+        }
+    }
+});
+
+</script>
+
+<!-- Custom Tailwind Utility Classes for Animations (defined here because inline script loads them) -->
+<script>
+    tailwind.config = {
+        darkMode: 'class', 
+        theme: {
+            extend: {
+                animation: {
+                    'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    'spin-slow': 'spin 5s linear infinite',
+                },
+                boxShadow: {
+                    '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
+                }
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
